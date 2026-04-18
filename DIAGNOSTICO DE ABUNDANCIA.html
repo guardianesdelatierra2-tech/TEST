@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico de Abundancia · MTR</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Cinzel:wght@400;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bordo: #7B1F2B;
+    --bordo-deep: #4A0F17;
+    --bordo-light: #A83040;
+    --dorado: #C9A227;
+    --dorado-light: #E8C547;
+    --crema: #FDF3E3;
+    --crema-dark: #F0E0C8;
+    --negro: #1A0A00;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background-color: var(--negro);
+    color: var(--crema);
+    font-family: 'Lato', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 15%, rgba(123,31,43,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 85%, rgba(201,162,39,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(74,15,23,0.25) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 0 28px;
+    width: 100%;
+  }
+  .screen {
+    display: none;
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 0;
+    animation: fadeUp 0.9s ease forwards;
+  }
+  .screen.active { display: flex; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .marca-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 5px;
+    color: var(--dorado);
+    text-transform: uppercase;
+    text-align: center;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .titulo-grande {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(34px, 8vw, 54px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.18;
+    text-align: center;
+    color: var(--crema);
+    letter-spacing: -0.3px;
+    margin-bottom: 16px;
+  }
+  .titulo-grande em { color: var(--dorado); font-style: italic; }
+  .subtitulo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(15px, 3.2vw, 19px);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--crema-dark);
+    text-align: center;
+    line-height: 1.65;
+    max-width: 480px;
+    margin: 0 auto 24px;
+    opacity: 0.8;
+  }
+  .intro-texto {
+    font-size: 13.5px;
+    color: var(--crema-dark);
+    text-align: center;
+    line-height: 1.85;
+    max-width: 440px;
+    margin: 0 auto 40px;
+    opacity: 0.6;
+  }
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--dorado), transparent);
+    margin: 24px auto;
+  }
+  .divider-sm {
+    width: 36px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,162,39,0.5), transparent);
+    margin: 16px auto;
+  }
+  .btn-principal {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--negro);
+    background: linear-gradient(135deg, var(--dorado) 0%, var(--dorado-light) 50%, var(--dorado) 100%);
+    border: none;
+    padding: 18px 52px;
+    cursor: pointer;
+    transition: all 0.35s ease;
+    clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+    display: inline-block;
+  }
+  .btn-principal:hover { transform: translateY(-3px); box-shadow: 0 10px 35px rgba(201,162,39,0.25); }
+  .firma { text-align: center; margin-top: 44px; }
+  .firma-nombre {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--dorado);
+    opacity: 0.65;
+    letter-spacing: 1px;
+  }
+  .firma-sub {
+    font-size: 9px;
+    letter-spacing: 3.5px;
+    color: var(--crema);
+    opacity: 0.35;
+    text-transform: uppercase;
+    margin-top: 5px;
+  }
+  /* PREGUNTAS */
+  .progress-wrap {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto 52px;
+    text-align: center;
+  }
+  .progress-label {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: 4px;
+    color: var(--dorado);
+    opacity: 0.55;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .progress-bar { width: 100%; height: 1px; background: rgba(201,162,39,0.15); }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--bordo-light), var(--dorado));
+    transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+  }
+  .pregunta-num {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: 4px;
+    color: var(--dorado);
+    opacity: 0.45;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .pregunta-texto {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(21px, 5vw, 30px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.35;
+    text-align: center;
+    color: var(--crema);
+    margin-bottom: 44px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .opcion {
+    background: rgba(253,243,227,0.025);
+    border: 1px solid rgba(201,162,39,0.18);
+    padding: 20px 26px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+  }
+  .opcion::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%; width: 3px;
+    background: var(--bordo);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+    transform-origin: bottom;
+  }
+  .opcion:hover { border-color: rgba(201,162,39,0.45); background: rgba(123,31,43,0.12); transform: translateX(5px); }
+  .opcion:hover::after { transform: scaleY(1); }
+  .opcion.selected { border-color: rgba(201,162,39,0.6); background: rgba(123,31,43,0.22); }
+  .opcion.selected::after { transform: scaleY(1); background: var(--dorado); }
+  .opcion-letra {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--dorado);
+    opacity: 0.55;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .opcion-texto {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16.5px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--crema);
+    font-style: italic;
+  }
+  .btn-siguiente {
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--negro);
+    background: var(--dorado);
+    border: none;
+    padding: 15px 38px;
+    cursor: pointer;
+    margin-top: 36px;
+    transition: all 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-siguiente.visible { opacity: 1; pointer-events: all; }
+  .btn-siguiente:hover { background: var(--dorado-light); transform: translateY(-2px); }
+  /* RESULTADO */
+  .resultado-tipo {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: 5px;
+    color: var(--dorado);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 16px;
+    opacity: 0.65;
+  }
+  .resultado-titulo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(26px, 6vw, 42px);
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.22;
+    text-align: center;
+    color: var(--crema);
+    margin-bottom: 10px;
+  }
+  .resultado-titulo em { color: var(--dorado); }
+  .resultado-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: var(--crema-dark);
+    opacity: 0.65;
+    text-align: center;
+    line-height: 1.55;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+  .resultado-cuerpo {
+    background: rgba(253,243,227,0.025);
+    border: 1px solid rgba(201,162,39,0.18);
+    border-left: 3px solid var(--bordo-light);
+    padding: 30px 34px;
+    margin: 32px 0;
+    width: 100%;
+    max-width: 560px;
+  }
+  .resultado-cuerpo p {
+    font-size: 14.5px;
+    line-height: 1.9;
+    color: var(--crema-dark);
+    opacity: 0.82;
+    margin-bottom: 14px;
+  }
+  .resultado-cuerpo p:last-child { margin-bottom: 0; }
+  .resultado-cuerpo strong { color: var(--dorado); font-weight: 400; }
+
+  /* BLOQUE ENERGÉTICO — destacado */
+  .energia-bloque {
+    background: rgba(123,31,43,0.2);
+    border: 1px solid rgba(201,162,39,0.3);
+    border-left: 3px solid var(--dorado);
+    padding: 22px 28px;
+    margin: 24px 0 0;
+    width: 100%;
+    max-width: 560px;
+  }
+  .energia-bloque-titulo {
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    letter-spacing: 4px;
+    color: var(--dorado);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+  .energia-bloque p {
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--crema-dark);
+    opacity: 0.8;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+  }
+
+  /* CTA BOX */
+  .cta-box {
+    background: linear-gradient(145deg, rgba(123,31,43,0.28), rgba(74,15,23,0.45));
+    border: 1px solid rgba(201,162,39,0.28);
+    padding: 40px 36px;
+    text-align: center;
+    width: 100%;
+    max-width: 560px;
+    margin-top: 24px;
+  }
+  .cta-titulo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-style: italic;
+    color: var(--crema);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .cta-desc {
+    font-size: 13px;
+    color: var(--crema-dark);
+    opacity: 0.6;
+    line-height: 1.8;
+    margin-bottom: 28px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cta-fecha {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--dorado);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0.9;
+  }
+
+  /* PASOS */
+  .pasos {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+    text-align: left;
+  }
+  .paso {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .paso-num {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--dorado);
+    opacity: 0.7;
+    min-width: 20px;
+    margin-top: 2px;
+  }
+  .paso-contenido {}
+  .paso-titulo {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    color: var(--dorado);
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .paso-precio {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--crema);
+    margin-bottom: 8px;
+    opacity: 0.9;
+  }
+  .btn-link {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--negro);
+    background: var(--dorado);
+    padding: 11px 24px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    margin-top: 4px;
+  }
+  .btn-link:hover { background: var(--dorado-light); transform: translateY(-1px); }
+  .btn-link-wsp {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--crema);
+    background: rgba(123,31,43,0.5);
+    border: 1px solid rgba(201,162,39,0.4);
+    padding: 11px 24px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    margin-top: 4px;
+  }
+  .btn-link-wsp:hover { background: rgba(123,31,43,0.8); transform: translateY(-1px); }
+
+  .divisor-pasos {
+    width: 100%;
+    height: 1px;
+    background: rgba(201,162,39,0.12);
+    margin: 4px 0;
+  }
+
+  .espina-deco {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: center;
+    margin: 24px 0;
+    opacity: 0.35;
+  }
+  .espina-deco::before, .espina-deco::after {
+    content: '';
+    flex: 1;
+    max-width: 70px;
+    height: 1px;
+  }
+  .espina-deco::before { background: linear-gradient(90deg, transparent, var(--dorado)); }
+  .espina-deco::after { background: linear-gradient(90deg, var(--dorado), transparent); }
+
+  @media (max-width: 480px) {
+    .container { padding: 0 20px; }
+    .resultado-cuerpo, .energia-bloque { padding: 20px 16px; }
+    .cta-box { padding: 28px 18px; }
+    .opcion { padding: 16px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="screen active" id="screen-intro">
+<div class="container">
+  <div style="text-align:center; margin-bottom:28px;">
+    <svg width="72" height="88" viewBox="0 0 72 88" fill="none">
+      <line x1="36" y1="58" x2="36" y2="86" stroke="#7B1F2B" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M36 74 Q22 68 21 58 Q32 61 36 74Z" fill="#4A0F17" opacity="0.8"/>
+      <path d="M36 68 Q50 62 51 52 Q40 57 36 68Z" fill="#4A0F17" opacity="0.8"/>
+      <line x1="30" y1="79" x2="24" y2="74" stroke="#7B1F2B" stroke-width="1.2" stroke-linecap="round"/>
+      <ellipse cx="36" cy="36" rx="17" ry="13" fill="#7B1F2B" opacity="0.45" transform="rotate(-15 36 36)"/>
+      <ellipse cx="36" cy="36" rx="17" ry="13" fill="#7B1F2B" opacity="0.45" transform="rotate(25 36 36)"/>
+      <ellipse cx="36" cy="36" rx="17" ry="13" fill="#7B1F2B" opacity="0.45" transform="rotate(65 36 36)"/>
+      <ellipse cx="36" cy="36" rx="12" ry="9" fill="#A83040" opacity="0.55" transform="rotate(5 36 36)"/>
+      <ellipse cx="36" cy="36" rx="12" ry="9" fill="#A83040" opacity="0.55" transform="rotate(50 36 36)"/>
+      <ellipse cx="36" cy="36" rx="7" ry="5.5" fill="#C9A227" opacity="0.3"/>
+      <circle cx="36" cy="36" r="2.5" fill="#C9A227" opacity="0.6"/>
+    </svg>
+  </div>
+  <div class="marca-tag">MTR · Manifiesta Tu Realidad</div>
+  <div class="divider"></div>
+  <h1 class="titulo-grande">Descubrí dónde está<br><em>trabada tu Abundancia</em></h1>
+  <div class="divider-sm"></div>
+  <p class="subtitulo">3 preguntas. Tu resultado personalizado.<br>El primer paso para que algo se mueva.</p>
+  <p class="intro-texto">No es información genérica sobre el dinero.<br>Es un diagnóstico real de <em>dónde</em> está el bloqueo en vos —<br>para que sepas exactamente qué trabajar.</p>
+  <div style="text-align:center;">
+    <button class="btn-principal" onclick="iniciar()">Quiero descubrirlo</button>
+  </div>
+  <div class="firma">
+    <div class="firma-nombre">Natalia Putignani</div>
+    <div class="firma-sub">Farmacéutica · Biodecodificadora · MTR</div>
+    <div class="firma-sub" style="margin-top:6px; opacity:0.5;">@nataliaputignani</div>
+  </div>
+</div>
+</div>
+
+<!-- PREGUNTA 1 -->
+<div class="screen" id="screen-q1">
+<div class="container">
+  <div class="progress-wrap">
+    <div class="progress-label">Pregunta 1 de 3</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
+  </div>
+  <p class="pregunta-num">01 · La traba</p>
+  <h2 class="pregunta-texto">¿Cuál de estas frases<br>te suena más familiar?</h2>
+  <div class="opciones">
+    <div class="opcion" onclick="seleccionar(this,'q1','cuerpo')">
+      <div class="opcion-letra">opción a</div>
+      <div class="opcion-texto">"El dinero entra pero se va rápido — siempre hay algo que aparece"</div>
+    </div>
+    <div class="opcion" onclick="seleccionar(this,'q1','merecimiento')">
+      <div class="opcion-letra">opción b</div>
+      <div class="opcion-texto">"Me cuesta sentirme merecedora de tener más"</div>
+    </div>
+    <div class="opcion" onclick="seleccionar(this,'q1','linaje')">
+      <div class="opcion-letra">opción c</div>
+      <div class="opcion-texto">"Cuando gasto en mí, aparece la culpa"</div>
+    </div>
+  </div>
+  <div style="text-align:center;">
+    <button class="btn-siguiente" id="btn-q1" onclick="siguiente('screen-q1','screen-q2')">Siguiente →</button>
+  </div>
+</div>
+</div>
+
+<!-- PREGUNTA 2 -->
+<div class="screen" id="screen-q2">
+<div class="container">
+  <div class="progress-wrap">
+    <div class="progress-label">Pregunta 2 de 3</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
+  </div>
+  <p class="pregunta-num">02 · El árbol</p>
+  <h2 class="pregunta-texto">En tu familia, ¿qué mensaje<br>sobre el dinero estaba más presente?</h2>
+  <div class="opciones">
+    <div class="opcion" onclick="seleccionar(this,'q2','linaje')">
+      <div class="opcion-letra">opción a</div>
+      <div class="opcion-texto">"Hay que trabajar duro y sacrificarse para tenerlo"</div>
+    </div>
+    <div class="opcion" onclick="seleccionar(this,'q2','cuerpo')">
+      <div class="opcion-letra">opción b</div>
+      <div class="opcion-texto">"El dinero siempre fue un problema en casa"</div>
+    </div>
+    <div class="opcion" onclick="seleccionar(this,'q2','merecimiento')">
+      <div class="opcion-letra">opción c</div>
+      <div class="opcion-texto">"Nunca se hablaba del dinero — era un tema tabú"</div>
+    </div>
+  </div>
+  <div style="text-align:center;">
+    <button class="btn-siguiente" id="btn-q2" onclick="siguiente('screen-q2','screen-q3')">Siguiente →</button>
+  </div>
+</div>
+</div>
+
+<!-- PREGUNTA 3 -->
+<div class="screen" id="screen-q3">
+<div class="container">
+  <div class="progress-wrap">
+    <div class="progress-label">Pregunta 3 de 3</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:99%"></div></div>
+  </div>
+  <p class="pregunta-num">03 · El movimiento</p>
+  <h2 class="pregunta-texto">¿Qué pasa cuando intentás<br>cambiar tu relación con el dinero?</h2>
+  <div class="opciones">
+    <div class="opcion" onclick="seleccionar(this,'q3','merecimiento')">
+      <div class="opcion-letra">opción a</div>
+      <div class="opcion-texto">"Empiezo, algo mejora un poco — y vuelvo al mismo lugar"</div>
+    </div>
+    <div class="opcion" onclick="seleccionar(this,'q3','cuerpo')">
+      <div class="opcion-letra">opción b</div>
+      <div class="opcion-texto">"Sé lo que tengo que hacer, pero sola no puedo sostenerlo"</div>
+    </div>
+    <div class="opcion" onclick="seleccionar(this,'q3','linaje')">
+      <div class="opcion-letra">opción c</div>
+      <div class="opcion-texto">"Ni sé bien por dónde empezar — tengo todo trabado"</div>
+    </div>
+  </div>
+  <div style="text-align:center;">
+    <button class="btn-siguiente" id="btn-q3" onclick="mostrarResultado()">Ver mi diagnóstico 🌹</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== RESULTADO: CUERPO ===== -->
+<div class="screen" id="resultado-cuerpo">
+<div class="container">
+  <div style="text-align:center; margin-bottom:24px;">
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <circle cx="26" cy="26" r="24" stroke="#7B1F2B" stroke-width="1" opacity="0.5"/>
+      <circle cx="26" cy="26" r="17" stroke="#C9A227" stroke-width="0.6" opacity="0.35"/>
+      <circle cx="26" cy="26" r="5" fill="#C9A227" opacity="0.25"/>
+      <circle cx="26" cy="26" r="2.5" fill="#C9A227" opacity="0.6"/>
+    </svg>
+  </div>
+  <div class="resultado-tipo">Tu diagnóstico · MTR</div>
+  <h2 class="resultado-titulo">Tu raíz está en<br>el <em>cuerpo físico</em></h2>
+  <div class="divider-sm"></div>
+  <p class="resultado-sub">El patrón no vive en la mente — vive en el cuerpo.<br>Y el cuerpo necesita ser el primer territorio de transformación.</p>
+
+  <div class="resultado-cuerpo">
+    <p>El dinero llega y se va porque tu cuerpo tiene grabado un programa de escasez. No es una metáfora — es fisiología. Un cuerpo en estrés crónico y alerta permanente <strong>bloquea la capacidad de recibir</strong> antes de que la mente pueda hacer nada al respecto.</p>
+    <p>Las afirmaciones, las meditaciones, los cuadernos de gratitud no alcanzaron porque trabajan desde arriba. Tu patrón vive más abajo — en la tensión que sentís cuando algo bueno está por llegar, en cómo te contraés cuando el dinero aparece.</p>
+    <p><strong>Para sanar el cuerpo, primero hay que limpiar el campo energético que sostiene ese patrón. Eso es siempre el primer paso — sin excepción.</strong></p>
+  </div>
+
+  <div class="energia-bloque">
+    <div class="energia-bloque-titulo">⚡ El primer paso es siempre el energético</div>
+    <p>Por más que la raíz esté en el cuerpo físico, los patrones limitantes que lo sostienen viven primero en el campo energético. Sanar la energía es lo que permite que cualquier otro trabajo — corporal, mental, de linaje — pueda realmente moverse. Sin limpiar el campo, todo lo demás queda en la superficie.</p>
+  </div>
+
+  <div class="cta-box">
+    <div class="cta-titulo">Activación de Abundancia</div>
+    <div class="cta-fecha">🌹 Viernes 24/4 · Activación Energética Grupal · En Diferido</div>
+    <p class="cta-desc">Una activación energética grupal donde identificamos y movemos los patrones limitantes que están bloqueando tu Abundancia en el campo energético. El primer paso real para que todo lo demás pueda fluir.</p>
+    <p class="cta-desc" style="font-style:italic; opacity:0.55;">No necesitás estar presente en un horario específico ni interrumpir tu día. La activación ocurre en el campo energético — vos seguís con tu vida normal mientras el proceso trabaja. Solo necesitás estar abierta a recibirlo.</p>
+
+    <div class="pasos">
+      <div class="paso">
+        <div class="paso-num">01</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Abonás tu lugar</div>
+          <div style="font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--dorado); text-transform:uppercase; margin-bottom:8px; opacity:0.9;">🌹 Preventa hasta el lunes 20 de abril</div>
+          <div class="paso-precio" style="color:var(--dorado-light); font-size:19px;">Argentina · $17.000 pesos</div>
+          <div style="font-size:11px; color:var(--crema-dark); opacity:0.45; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-style:italic;">Después del lunes: $22.000 pesos</div>
+          <div style="font-size:14px; color:var(--crema-dark); opacity:0.8; font-family:'Cormorant Garamond',serif; font-style:italic;">Transferí al alias: <strong style="color:var(--dorado); font-weight:400; font-size:16px;">nati.energia</strong></div>
+          <div style="margin-top:18px; border-top:1px solid rgba(201,162,39,0.12); padding-top:18px;">
+          <div class="paso-precio" style="color:var(--dorado-light); font-size:19px;">Exterior · USD 17 · PayPal</div>
+          <div style="font-size:11px; color:var(--crema-dark); opacity:0.45; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-style:italic;">Después del lunes: USD 22</div>
+          <a href="https://www.paypal.me/guardianesoficial" target="_blank" class="btn-link">Pagar con PayPal</a>
+          </div>
+        </div>
+      </div>
+      <div class="divisor-pasos"></div>
+      <div class="paso">
+        <div class="paso-num">02</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Enviás el comprobante</div>
+          <div class="paso-precio">Mandá el comprobante directo a mi WhatsApp</div>
+          <a href="https://wa.me/message/FOILKVASWFHBN1" target="_blank" class="btn-link-wsp">Enviar comprobante 🌹</a>
+        </div>
+      </div>
+      <div class="divisor-pasos"></div>
+      <div class="paso">
+        <div class="paso-num">03</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Te sumás al grupo</div>
+          <div class="paso-precio">Grupo exclusivo · Activación de Abundancia</div>
+          <a href="https://chat.whatsapp.com/DVewvdF2PGu7T1afwNddWd?mode=gi_t" target="_blank" class="btn-link-wsp">Unirme al grupo 🌹</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="espina-deco">🌹</div>
+    <p style="font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:var(--crema-dark); opacity:0.45;">Natalia Putignani · MTR · Manifiesta Tu Realidad</p>
+  </div>
+</div>
+</div>
+
+<!-- ===== RESULTADO: LINAJE ===== -->
+<div class="screen" id="resultado-linaje">
+<div class="container">
+  <div style="text-align:center; margin-bottom:24px;">
+    <svg width="52" height="60" viewBox="0 0 52 60" fill="none">
+      <line x1="26" y1="30" x2="26" y2="58" stroke="#7B1F2B" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="26" y1="40" x2="13" y2="52" stroke="#4A0F17" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+      <line x1="26" y1="40" x2="39" y2="52" stroke="#4A0F17" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+      <circle cx="26" cy="20" r="14" fill="#7B1F2B" opacity="0.2" stroke="#A83040" stroke-width="0.8"/>
+      <circle cx="26" cy="20" r="8" fill="#7B1F2B" opacity="0.35"/>
+      <circle cx="26" cy="20" r="3" fill="#C9A227" opacity="0.5"/>
+    </svg>
+  </div>
+  <div class="resultado-tipo">Tu diagnóstico · MTR</div>
+  <h2 class="resultado-titulo">Tu raíz está en<br>el <em>árbol familiar</em></h2>
+  <div class="divider-sm"></div>
+  <p class="resultado-sub">Lo que no nombraste, lo seguís repitiendo.<br>Esas creencias sobre el dinero no nacieron con vos — fueron aprendidas.</p>
+
+  <div class="resultado-cuerpo">
+    <p>Venís de un árbol familiar donde el dinero era escaso, sufrido, o un tema que directamente no se nombraba. Eso no es tu historia — es la historia que heredaste. Y mientras no la veas con claridad, la seguís repitiendo sin querer, sin saber por qué.</p>
+    <p>La buena noticia es concreta: <strong>lo que termina en vos no llega a la siguiente generación.</strong> Cuando identificás el patrón del árbol y hacés el corte, algo en el campo se mueve de verdad.</p>
+    <p><strong>Pero antes de trabajar el linaje, hay que limpiar el campo energético que lo sostiene. Ese es siempre el primer paso.</strong></p>
+  </div>
+
+  <div class="energia-bloque">
+    <div class="energia-bloque-titulo">⚡ El primer paso es siempre el energético</div>
+    <p>Los patrones del árbol familiar no viven solo en la memoria o en la mente — están grabados en el campo energético. Por eso el trabajo de linaje sin limpieza energética previa no termina de moverse. Sanar el campo es lo que abre la puerta para que el corte con el árbol sea real y no solo simbólico.</p>
+  </div>
+
+  <div class="cta-box">
+    <div class="cta-titulo">Activación de Abundancia</div>
+    <div class="cta-fecha">🌹 Viernes 24/4 · Activación Energética Grupal · En Diferido</div>
+    <p class="cta-desc">Una activación energética grupal donde identificamos y movemos los patrones limitantes que están bloqueando tu Abundancia en el campo energético. El primer paso real para que todo lo demás pueda fluir.</p>
+    <p class="cta-desc" style="font-style:italic; opacity:0.55;">No necesitás estar presente en un horario específico ni interrumpir tu día. La activación ocurre en el campo energético — vos seguís con tu vida normal mientras el proceso trabaja. Solo necesitás estar abierta a recibirlo.</p>
+
+    <div class="pasos">
+      <div class="paso">
+        <div class="paso-num">01</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Abonás tu lugar</div>
+          <div style="font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--dorado); text-transform:uppercase; margin-bottom:8px; opacity:0.9;">🌹 Preventa hasta el lunes 20 de abril</div>
+          <div class="paso-precio" style="color:var(--dorado-light); font-size:19px;">Argentina · $17.000 pesos</div>
+          <div style="font-size:11px; color:var(--crema-dark); opacity:0.45; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-style:italic;">Después del lunes: $22.000 pesos</div>
+          <div style="font-size:14px; color:var(--crema-dark); opacity:0.8; font-family:'Cormorant Garamond',serif; font-style:italic;">Transferí al alias: <strong style="color:var(--dorado); font-weight:400; font-size:16px;">nati.energia</strong></div>
+          <div style="margin-top:18px; border-top:1px solid rgba(201,162,39,0.12); padding-top:18px;">
+          <div class="paso-precio" style="color:var(--dorado-light); font-size:19px;">Exterior · USD 17 · PayPal</div>
+          <div style="font-size:11px; color:var(--crema-dark); opacity:0.45; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-style:italic;">Después del lunes: USD 22</div>
+          <a href="https://www.paypal.me/guardianesoficial" target="_blank" class="btn-link">Pagar con PayPal</a>
+          </div>
+        </div>
+      </div>
+      <div class="divisor-pasos"></div>
+      <div class="paso">
+        <div class="paso-num">02</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Enviás el comprobante</div>
+          <div class="paso-precio">Mandá el comprobante directo a mi WhatsApp</div>
+          <a href="https://wa.me/message/FOILKVASWFHBN1" target="_blank" class="btn-link-wsp">Enviar comprobante 🌹</a>
+        </div>
+      </div>
+      <div class="divisor-pasos"></div>
+      <div class="paso">
+        <div class="paso-num">03</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Te sumás al grupo</div>
+          <div class="paso-precio">Grupo exclusivo · Activación de Abundancia</div>
+          <a href="https://chat.whatsapp.com/DVewvdF2PGu7T1afwNddWd?mode=gi_t" target="_blank" class="btn-link-wsp">Unirme al grupo 🌹</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="espina-deco">🌹</div>
+    <p style="font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:var(--crema-dark); opacity:0.45;">Natalia Putignani · MTR · Manifiesta Tu Realidad</p>
+  </div>
+</div>
+</div>
+
+<!-- ===== RESULTADO: MERECIMIENTO ===== -->
+<div class="screen" id="resultado-merecimiento">
+<div class="container">
+  <div style="text-align:center; margin-bottom:24px;">
+    <svg width="56" height="64" viewBox="0 0 56 64" fill="none">
+      <ellipse cx="28" cy="26" rx="14" ry="11" fill="#7B1F2B" opacity="0.4" transform="rotate(-10 28 26)"/>
+      <ellipse cx="28" cy="26" rx="14" ry="11" fill="#7B1F2B" opacity="0.4" transform="rotate(30 28 26)"/>
+      <ellipse cx="28" cy="26" rx="10" ry="8" fill="#A83040" opacity="0.5" transform="rotate(10 28 26)"/>
+      <ellipse cx="28" cy="26" rx="6" ry="5" fill="#C9A227" opacity="0.3"/>
+      <circle cx="28" cy="26" r="2.5" fill="#C9A227" opacity="0.65"/>
+      <line x1="28" y1="37" x2="28" y2="62" stroke="#7B1F2B" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M28 50 Q18 45 17 38 Q26 41 28 50Z" fill="#4A0F17" opacity="0.7"/>
+    </svg>
+  </div>
+  <div class="resultado-tipo">Tu diagnóstico · MTR</div>
+  <h2 class="resultado-titulo">Tu raíz está en<br>el <em>merecimiento</em></h2>
+  <div class="divider-sm"></div>
+  <p class="resultado-sub">No es que la abundancia no llega.<br>Es que hay algo adentro que todavía no se siente capaz de recibirla.</p>
+
+  <div class="resultado-cuerpo">
+    <p>La frase que más se repite en las mujeres que trabajan conmigo es exactamente la tuya: <strong>"me cuesta sentirme merecedora"</strong>. No es falta de autoestima genérica — es la creencia concreta de que el dinero, el descanso y el reconocimiento son para otras, no para vos.</p>
+    <p>Esa creencia tiene una raíz — a veces en el cuerpo, a veces en el árbol familiar, siempre en el campo energético. Y mientras esa raíz no se toque, la mente puede afirmar todo lo que quiera sin que nada se mueva de verdad.</p>
+    <p><strong>La mujer que puede recibir no espera merecer primero. Pero para llegar ahí, hay que limpiar lo que lo impide desde el campo energético.</strong></p>
+  </div>
+
+  <div class="energia-bloque">
+    <div class="energia-bloque-titulo">⚡ El primer paso es siempre el energético</div>
+    <p>La creencia de que "no merezco" no vive solo en el pensamiento — está instalada en el campo energético como un patrón limitante que bloquea la recepción antes de que cualquier otra herramienta pueda actuar. Limpiar ese campo es el primer paso real, sin el cual todo lo demás se resetea al punto de partida.</p>
+  </div>
+
+  <div class="cta-box">
+    <div class="cta-titulo">Activación de Abundancia</div>
+    <div class="cta-fecha">🌹 Viernes 24/4 · Activación Energética Grupal · En Diferido</div>
+    <p class="cta-desc">Una activación energética grupal donde identificamos y movemos los patrones limitantes que están bloqueando tu Abundancia en el campo energético. El primer paso real para que todo lo demás pueda fluir.</p>
+    <p class="cta-desc" style="font-style:italic; opacity:0.55;">No necesitás estar presente en un horario específico ni interrumpir tu día. La activación ocurre en el campo energético — vos seguís con tu vida normal mientras el proceso trabaja. Solo necesitás estar abierta a recibirlo.</p>
+
+    <div class="pasos">
+      <div class="paso">
+        <div class="paso-num">01</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Abonás tu lugar</div>
+          <div style="font-family:'Cinzel',serif; font-size:9px; letter-spacing:2px; color:var(--dorado); text-transform:uppercase; margin-bottom:8px; opacity:0.9;">🌹 Preventa hasta el lunes 20 de abril</div>
+          <div class="paso-precio" style="color:var(--dorado-light); font-size:19px;">Argentina · $17.000 pesos</div>
+          <div style="font-size:11px; color:var(--crema-dark); opacity:0.45; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-style:italic;">Después del lunes: $22.000 pesos</div>
+          <div style="font-size:14px; color:var(--crema-dark); opacity:0.8; font-family:'Cormorant Garamond',serif; font-style:italic;">Transferí al alias: <strong style="color:var(--dorado); font-weight:400; font-size:16px;">nati.energia</strong></div>
+          <div style="margin-top:18px; border-top:1px solid rgba(201,162,39,0.12); padding-top:18px;">
+          <div class="paso-precio" style="color:var(--dorado-light); font-size:19px;">Exterior · USD 17 · PayPal</div>
+          <div style="font-size:11px; color:var(--crema-dark); opacity:0.45; margin-bottom:12px; font-family:'Cormorant Garamond',serif; font-style:italic;">Después del lunes: USD 22</div>
+          <a href="https://www.paypal.me/guardianesoficial" target="_blank" class="btn-link">Pagar con PayPal</a>
+          </div>
+        </div>
+      </div>
+      <div class="divisor-pasos"></div>
+      <div class="paso">
+        <div class="paso-num">02</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Enviás el comprobante</div>
+          <div class="paso-precio">Mandá el comprobante directo a mi WhatsApp</div>
+          <a href="https://wa.me/message/FOILKVASWFHBN1" target="_blank" class="btn-link-wsp">Enviar comprobante 🌹</a>
+        </div>
+      </div>
+      <div class="divisor-pasos"></div>
+      <div class="paso">
+        <div class="paso-num">03</div>
+        <div class="paso-contenido">
+          <div class="paso-titulo">Te sumás al grupo</div>
+          <div class="paso-precio">Grupo exclusivo · Activación de Abundancia</div>
+          <a href="https://chat.whatsapp.com/DVewvdF2PGu7T1afwNddWd?mode=gi_t" target="_blank" class="btn-link-wsp">Unirme al grupo 🌹</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="espina-deco">🌹</div>
+    <p style="font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:var(--crema-dark); opacity:0.45;">Natalia Putignani · MTR · Manifiesta Tu Realidad</p>
+  </div>
+</div>
+</div>
+
+<script>
+  const respuestas = { q1: null, q2: null, q3: null };
+  function iniciar() { cambiarPantalla('screen-intro', 'screen-q1'); }
+  function seleccionar(el, pregunta, valor) {
+    el.closest('.opciones').querySelectorAll('.opcion').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    respuestas[pregunta] = valor;
+    const btn = document.getElementById('btn-' + pregunta);
+    if (btn) btn.classList.add('visible');
+  }
+  function siguiente(actual, sig) { cambiarPantalla(actual, sig); }
+  function mostrarResultado() {
+    const conteo = { cuerpo: 0, linaje: 0, merecimiento: 0 };
+    Object.values(respuestas).forEach(v => { if (v) conteo[v]++; });
+    let max = 0, ganador = 'merecimiento';
+    for (const [k, v] of Object.entries(conteo)) {
+      if (v > max) { max = v; ganador = k; }
+    }
+    cambiarPantalla(pantallaActual(), 'resultado-' + ganador);
+  }
+  function pantallaActual() {
+    const s = document.querySelector('.screen.active');
+    return s ? s.id : '';
+  }
+  function cambiarPantalla(actual, sig) {
+    const a = document.getElementById(actual);
+    const s = document.getElementById(sig);
+    if (a) a.classList.remove('active');
+    if (s) { s.classList.remove('active'); void s.offsetWidth; s.classList.add('active'); }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
